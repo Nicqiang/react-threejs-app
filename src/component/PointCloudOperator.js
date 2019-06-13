@@ -3,14 +3,31 @@ import '../css/ThreeMap.css';
 import * as THREE from 'three';
 import Orbitcontrols from 'three-orbitcontrols';
 import Stats from '../common/threejslibs/stats.min.js';
+import PLYLoader from '../common/threejslibs/PLYLoader';
 import MyGUI from './MyGui';
 import reqwest from 'reqwest';
+import { message } from "antd";
 
 
 class PointCloudOperator extends Component{
+
+    
+
+    constructor(props){
+        super(props);
+        this.callByMyGui = this.callByMyGui.bind(this);
+    }
+
+    state = {
+        pointSize: 0.001,
+        pointColor: '',
+
+    }
+
     componentDidMount(){
         this.initThree();
-	}
+    }
+    
 	
 
     initThree() {
@@ -20,24 +37,25 @@ class PointCloudOperator extends Component{
 		let container = document.getElementById('WebGL-output');
         let width = container.clientWidth,height = container.clientHeight;
         let axes;
+        let pointsSzie = this.state.pointSize;
+        let pointGeoWithMaterial;
+        let isUpdateModel = false;
 
 		init();
 		animate();
 
-		function init() {
+		function init(pointsSzie) {
+            console.log("pointSize="+pointsSzie)
 			scene = new THREE.Scene();
 			group = new THREE.Group();
 			scene.add( group );
 
-			camera = new THREE.PerspectiveCamera( 30, width / height, 1, 200 );
+			camera = new THREE.PerspectiveCamera( 55, width / height, 0.01, 200 );
 			camera.position.x = 0;
-        	camera.position.y = 1;
-			camera.position.z = 1;
-			camera.lookAt( scene.position );
+        	camera.position.y = 0;
+			camera.position.z = 2;
+			camera.lookAt( 0,0,0);
 			
-            //控制地球
-            // let orbitControls = new /*THREE.OrbitControls*/Orbitcontrols(camera);
-            // let orbitControls = new Orbitcontrols(camera);
         	// orbitControls.autoRotate = false;
         	// let clock = new THREE.Clock();
         	//光源
@@ -46,7 +64,7 @@ class PointCloudOperator extends Component{
 
         	let spotLight = new THREE.DirectionalLight(0xffffff);
         	spotLight.position.set(550, 100, 550);
-        	spotLight.intensity = 0.6;
+        	spotLight.intensity = 0.8;
 
         	scene.add(spotLight);
 			// Texture
@@ -59,17 +77,17 @@ class PointCloudOperator extends Component{
 			// 	let mesh = new THREE.Mesh( geometry, material );
 			// 	group.add( mesh );
             // } );
-            loadPoints(46);
+            //loadPoints(51);
+            viewPLY("/Users/nicqiang/HIT-Course/HIT-SE-COURSE /毕业论文/点云/dragon.ply", scene);
 
 			renderer = new THREE.WebGLRenderer();
 			renderer.setClearColor( 'oxB2BABB' );
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setSize( width, height );
-			container.appendChild( renderer.domElement );
-			stats = new Stats();
-			container.appendChild( stats.dom );  //增加状态信息 
-            stats.domElement.style.top = '50px';
+			
             
+            initStats();
+
             //创建坐标轴
             createAxes(1500);
             disPlayAxes(true)
@@ -79,6 +97,16 @@ class PointCloudOperator extends Component{
             
             
 
+        }
+
+        /**
+         * 初始化状态栏显示
+         */
+        function initStats(){
+            container.appendChild( renderer.domElement );
+			stats = new Stats();
+			container.appendChild( stats.dom );  //增加状态信息 
+            stats.domElement.style.top = '50px';
         }
 
         function loadPointGeometryToGroup(pointsGeo){
@@ -91,8 +119,9 @@ class PointCloudOperator extends Component{
 			// 	let mesh = new THREE.Mesh( geometry, material );
 			// 	group.add( mesh );
             // } );
-            let pointMaterial = new THREE.PointsMaterial({size: 0.001});
-            let pointGeoWithMaterial = new THREE.Points(pointsGeo, pointMaterial);
+            let pointMaterial = new THREE.PointsMaterial({size: pointsSzie});
+            pointGeoWithMaterial = new THREE.Points(pointsGeo, pointMaterial);
+            pointGeoWithMaterial.material.size = pointsSzie;
             group.add(pointGeoWithMaterial);
             console.log("load finshed")
 
@@ -114,14 +143,31 @@ class PointCloudOperator extends Component{
                             // console.log(parseFloat(v_p[2]));
                             geo.vertices.push(new THREE.Vector3(parseFloat(v_p[0]), parseFloat(v_p[1]), parseFloat(v_p[2])));
                         })
+                        message.info("load from server success");
                         loadPointGeometryToGroup(geo);
-                        
                     }else{
                         console.log("load point failed");
                     }
                     
                 })
         };
+
+        function viewPLY(filePath, sence){
+            var loader = new PLYLoader();
+            loader.load(filePath, function(geometry){
+                geometry.computeVertexNormals();
+        
+                    //创建纹理，并将模型添加到场景道中
+                var material = new THREE.MeshStandardMaterial( {flatShading: true } );
+                    // var material = new THREE.MeshStandardMaterial( { color: 0x0055ff, flatShading: true } );
+                    // var material = new THREE.MeshLamebertMaterial({color: 0x7777ff});
+                var mesh = new THREE.Mesh( geometry, material );
+                mesh.rotation.y = Math.PI;
+                mesh.scale.set(0.05, 0.05, 0.05);
+                scene.add( mesh );
+        
+            });
+        }
         
 
         function initGui(){
@@ -129,6 +175,8 @@ class PointCloudOperator extends Component{
             orbitControls.autoRotate = false;
 
         }
+
+        
 
         /**
          * 创建坐标轴
@@ -157,14 +205,30 @@ class PointCloudOperator extends Component{
 			stats.update();
 		}
 		function render() {		
-			// group.rotation.y -= 0.005;  //这行可以控制地球自转
-			renderer.render( scene, camera );
-		}
+            // if(isUpdateModel){
+
+            // }
+            //更新点大小
+            // console.log(JSON.stringify(pointGeoWithMaterial));
+            // pointGeoWithMaterial.material.size  = pointsSzie;
+            // group.rotation.y -= 0.005;  //这行可以控制地球自转
+            renderer.render( scene, camera );
+
+        }
+        
+    }
+
+    callByMyGui(e){
+        console.log(e)
+        if(e.displayType="point" && e.isReload){
+            // pointSize = e.pointSize;
+            console.log("加载数据")
+        }
     }
 
     render() {
         return (
-            <div id='WebGL-output'><MyGUI /></div>
+            <div id='WebGL-output'><MyGUI callResult={this.callByMyGui}/></div>
 			
         )
     }

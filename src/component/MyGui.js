@@ -6,15 +6,19 @@ class MyGUI extends Component{
     state = {
         data:{
             id: '1',
-            power: 9000,
+            pointSize: 0.01,
             isGpu: true,
             color: '#2FA1D6',
             displayType: 'point',
-            factory: 0
+            factory: 0,
+            isReload: true,
         }
     }
 
-    handleUpdate = data => this.setState({ data })
+    handleUpdate = data => {
+        this.setState({ data })
+        this.props.callResult(this.state.data)
+    }
 
     render() {
 
@@ -28,6 +32,7 @@ class MyGUI extends Component{
                 <DatBoolean path='isGpu' label='isGpu?' />
                 <DatColor path='color' label='color' />
                 <DatSelect path='displayType' lable='displayType' options={['point', 'line', 'face']} />
+                <DatBoolean path='isReload' label='isReload' />
             </DatGui>
         )
     }

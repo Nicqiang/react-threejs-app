@@ -4,15 +4,16 @@ import { Table, Button, Icon } from 'antd';
 import 'antd/dist/antd.css';
 import reqwest from 'reqwest'
 import moment from 'moment'; 
-import AntdDeleteButton from './AntdDeleteButton'
-import AntdEditButton from './AntdEditButton'
-import {Link } from "react-router-dom";
+import AntdDeleteButton from './AntdDeleteButton';
+import AntdEditButton from './AntdEditButton';
+import {Link} from 'react-router-dom';
 
 
 class AntdRequestTable extends Component {
   constructor(props){
     super(props)
     this.reFreshPage = this.reFreshPage.bind(this);
+    this.goToPointOperator = this.goToPointOperator.bind(this);
   }
 
   state = {
@@ -20,8 +21,6 @@ class AntdRequestTable extends Component {
     pagination: {},
     loading: false,
   };
-    
-    
       componentDidMount() {
         this.fetch();
       }
@@ -42,6 +41,27 @@ class AntdRequestTable extends Component {
           page: pagination.current
         });
       };
+
+      goToPointOperator(e){
+        console.log("e:"+e);
+
+        // browserHistory.push(
+        //   {
+        //     pathname: "/operator",
+        //     state: {
+
+        //     }
+        //   }
+        // )
+        let path = {
+          pathname: "/operator",
+          state: {
+
+          }
+        }
+        
+        // this.props.history.pushState(path);
+      }
     
       fetch = (params = {}) => {
         console.log('params:', params);
@@ -82,7 +102,7 @@ class AntdRequestTable extends Component {
           },
           {
             title: '点数',
-            dataIndex: 'pointNum',
+            dataIndex: 'originPointNum',
           //   filters: [{ text: 'Male', value: 'male' }, { text: 'Female', value: 'female' }],
             width: '5%',
           },
